@@ -42,6 +42,33 @@ class DNA:
         return "".join(self.genes) + " " + str(self.fitness)
 
 
+class Population:
+    def __init__(self, size, length):
+        self.p = []
+        self.size = size
+        self.length = length
+        for _ in range(size):
+            dna = DNA(length)
+            self.p.append(dna)
+
+    def calculate_fitness(self, target):
+        for dna in self.p:
+            dna.calculate_fitness(target)
+
+    def create_mating_pool(self) -> list:
+        mp = []
+        for dna in self.p:
+            n = int(dna.fitness * 100)
+            for _ in range(n):
+                mp.append(dna)
+            mp.append(dna)
+        return mp
+
+    def weighted_selection():
+        index = 0
+        start = random()
+
+
 def create_population(size, length):
     p = []
     for _ in range(size):
@@ -60,14 +87,23 @@ def create_mating_pool(population):
     return mp
 
 
+def weighted_selection():  # Unfinished
+    index = 0
+    start = random.random()
+
+
 def reproduce(population, mating_pool):
     for i in range(len(population)):
+        # Apply the weighted_selection() here instead of random.choice()
         parent1 = random.choice(mating_pool)
         parent2 = random.choice(mating_pool)
         child = parent1.crossover(parent2)
         child.mutate(0.1)
+
         child.calculate_fitness(target)
+
         population[i] = child
+
         global attempt
         attempt += 1
         print(f"attempt {attempt}: {child.get()}")
