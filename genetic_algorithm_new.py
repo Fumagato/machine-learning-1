@@ -1,4 +1,5 @@
 import random
+import pygame
 
 characters = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 target = "To be or not to be"
@@ -94,4 +95,5 @@ def main(target_phrase=None, population_size=200, mutation_rate=0.05,
 
 
 if __name__ == "__main__":
-    print(main(verbose=True))
+    # print(main(verbose=True))
+    pass
