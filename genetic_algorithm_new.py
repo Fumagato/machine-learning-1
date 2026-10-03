@@ -1,16 +1,14 @@
 import random
 
 characters = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-target = "fumagato"
+target = "To be or not to be"
 
 
 class DNA:
     def __init__(self, length):
-        self.genes = []
+        self.genes = [random.choice(characters) for _ in range(length)]
         self.length = length
         self.fitness = 0
-        for _ in range(self.length):
-            self.genes.append(random.choice(characters))
 
     def calculate_fitness(self, target):
         score = 0
@@ -20,110 +18,80 @@ class DNA:
         self.fitness = score / len(target)
 
     def crossover(self, partner):
-        child = DNA(len(self.genes))
-        # 'len(self.genes) - 1' or not '- 1', idk the difference
         midpoint = random.randint(0, len(self.genes))
-        for i in range(len(self.genes)):
-            if i > midpoint:
-                child.genes[i] = partner.genes[i]
-            else:
-                child.genes[i] = self.genes[i]
+        child = DNA(0)
+        child.genes = self.genes[:midpoint + 1] + partner.genes[midpoint + 1:]
+        child.length = len(child.genes)
         return child
 
     def mutate(self, mutation_rate):
-        for i in range(len(self.genes)):
-            if random.randint(0, 100) < mutation_rate:
-                self.genes[i] = random.choice(characters)
+        if self.genes and random.random() < mutation_rate:
+            index = random.randrange(len(self.genes))
+            self.genes[index] = random.choice(characters)
 
     def get(self):
         return "".join(self.genes)
 
-    def __repr__(self):  # For debugging
-        return "".join(self.genes) + " " + str(self.fitness)
+    def __repr__(self):
+        return self.get() + " " + str(self.fitness)
 
 
 class Population:
     def __init__(self, size, length):
-        self.p = []
+        self.p = [DNA(length) for _ in range(size)]
         self.size = size
         self.length = length
-        for _ in range(size):
-            dna = DNA(length)
-            self.p.append(dna)
 
     def calculate_fitness(self, target):
         for dna in self.p:
             dna.calculate_fitness(target)
 
-    def create_mating_pool(self) -> list:
-        mp = []
-        for dna in self.p:
-            n = int(dna.fitness * 100)
-            for _ in range(n):
-                mp.append(dna)
-            mp.append(dna)
-        return mp
+    def select_parent(self, tournament_size=3):
+        candidates = random.sample(self.p, min(tournament_size, len(self.p)))
+        return max(candidates, key=lambda dna: dna.fitness)
 
-    def weighted_selection():
-        index = 0
-        start = random()
+    def reproduce(self, target, mutation_rate=0.05):
+        self.p.sort(key=lambda dna: dna.fitness, reverse=True)
+        next_generation = []
 
+        while len(next_generation) < self.size:
+            parent1 = self.select_parent()
+            parent2 = self.select_parent()
+            child = parent1.crossover(parent2)
+            child.mutate(mutation_rate)
+            child.calculate_fitness(target)
 
-def create_population(size, length):
-    p = []
-    for _ in range(size):
-        dna = DNA(length)
-        p.append(dna)
-    return p
+            if child.get() == target:
+                return child
 
+            next_generation.append(child)
 
-def create_mating_pool(population):
-    mp = []
-    for dna in population:
-        n = int(dna.fitness * 100)
-        for _ in range(n):
-            mp.append(dna)
-        mp.append(dna)
-    return mp
+        self.p = next_generation
+        return None
 
 
-def weighted_selection():  # Unfinished
-    index = 0
-    start = random.random()
+def main(target_phrase=None, population_size=200, mutation_rate=0.05,
+         verbose=False):
+    if target_phrase is None:
+        target_phrase = target
+
+    population = Population(population_size, len(target_phrase))
+    generation = 0
+
+    while True:
+        population.calculate_fitness(target_phrase)
+        best = max(population.p, key=lambda dna: dna.fitness)
+        if best.get() == target_phrase:
+            return best.get()
+
+        generate = population.reproduce(target_phrase, mutation_rate)
+        if generate is not None:
+            return generate.get()
+
+        generation += 1
+        if verbose:
+            print(f"Generation {generation}: {best.get()}")
 
 
-def reproduce(population, mating_pool):
-    for i in range(len(population)):
-        # Apply the weighted_selection() here instead of random.choice()
-        parent1 = random.choice(mating_pool)
-        parent2 = random.choice(mating_pool)
-        child = parent1.crossover(parent2)
-        child.mutate(0.1)
-
-        child.calculate_fitness(target)
-
-        population[i] = child
-
-        global attempt
-        attempt += 1
-        print(f"attempt {attempt}: {child.get()}")
-        if child.get() == target:
-            global running
-            running = False
-            break
-
-
-attempt = 0
-running = True
-
-
-def main():
-    population = create_population(100, len(target))
-    for dna in population:
-        dna.calculate_fitness(target)
-    while running:
-        mating_pool = create_mating_pool(population)
-        reproduce(population, mating_pool)
-
-
-main()
+if __name__ == "__main__":
+    print(main(verbose=True))
