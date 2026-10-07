@@ -87,7 +87,7 @@ def tournament(parents):
 
 def main():
     # password = input("Type something I'll guess: ")
-    password = "fumagato"
+    password = "To be or not to be"
 
     # Test password
     # password = "Fumagato"

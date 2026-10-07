@@ -6,9 +6,9 @@ screen_size = (800, 600)
 pygame.init()
 screen = pygame.display.set_mode(screen_size)
 clock = pygame.time.Clock()
-fps = 30
+fps = 120
 
-life_span = 500
+life_span = 100
 
 
 class Rocket:
@@ -34,8 +34,8 @@ class Rocket:
         self.fitness = 1 / (distance * distance)
 
     def crossover(self, partner):
-        midpoint = random.randint(0, len(self.genes))
-        child = DNA(0)
+        midpoint = random.randint(0, len(self.dna.genes))
+        child = DNA()
         child.genes = self.dna.genes[:midpoint +
                                      1] + partner.dna.genes[midpoint + 1:]
         child.length = len(child.genes)
@@ -45,7 +45,6 @@ class Rocket:
         pygame.draw.circle(screen, "red", self.position, 14)
 
     def run(self):
-        # print(self.dna.genes[self.gene_counter], "alksdjhflkahsjfdkjlh")
         self.apply_force(self.dna.genes[self.gene_counter])
         self.gene_counter += 1
         self.update()
@@ -63,7 +62,7 @@ class DNA:
     def mutate(self, mutation_rate):
         if self.genes and random.random() < mutation_rate:
             index = random.randrange(len(self.genes))
-            self.genes[index] = random.choice(characters)
+            self.genes[index] = random_vector2()
 
 
 class Population:
@@ -73,6 +72,7 @@ class Population:
         self.generation = 0
         for _ in range(length):
             self.p.append(Rocket(400, 300, DNA()))
+        self.target = target
 
     def calculate_fitness(self, target):
         for rocket in self.p:
@@ -84,15 +84,14 @@ class Population:
 
     def reproduction(self):
         next_generation = []
-        while len(next_generation) < self.length:
+        while len(next_generation) < len(self.p):
             parent1 = self.select_parent()
             parent2 = self.select_parent()
             child = parent1.crossover(parent2)
             child.mutate(self.mutation_rate)
-            child.calculate_fitness(self.target)
-
-            if child.get() == self.target:
-                return child
+            next_generation.append(
+                Rocket(400, 300, child))
+        self.p = next_generation
 
     def draw(self):
         for rocket in self.p:
@@ -101,6 +100,15 @@ class Population:
     def run(self):
         for rocket in self.p:
             rocket.run()
+
+
+class Target:
+    def __init__(self, x, y, radius):
+        self.position = pygame.Vector2(x, y)
+        self.radius = radius
+
+    def draw(self):
+        pygame.draw.circle(screen, "blue", self.position, self.radius)
 
 
 def random_vector2():
@@ -112,8 +120,8 @@ def random_vector2():
 
 
 def main(running):
-    rocket = Rocket(400, 300, DNA())
-    population = Population(40, 0.01)
+    target = Target(400, 60, 20)
+    population = Population(40, 0.01, target)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -121,8 +129,14 @@ def main(running):
 
         screen.fill("white")
 
-        population.draw()
-        population.run()
+        target.draw()
+
+        try:
+            population.draw()
+            population.run()
+        except:
+            population.calculate_fitness(target)
+            population.reproduction()
 
         pygame.display.flip()
         clock.tick(fps)
