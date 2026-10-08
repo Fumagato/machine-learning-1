@@ -7,6 +7,7 @@ pygame.init()
 screen = pygame.display.set_mode(screen_size)
 clock = pygame.time.Clock()
 fps = 120
+pygame.display.set_caption("Machine Learning 1")
 
 life_span = 100
 
@@ -38,7 +39,6 @@ class Rocket:
         child = DNA()
         child.genes = self.dna.genes[:midpoint +
                                      1] + partner.dna.genes[midpoint + 1:]
-        child.length = len(child.genes)
         return child
 
     def draw(self):
@@ -57,7 +57,6 @@ class DNA:
         for i in range(life_span):
             self.genes.append(random_vector2())
             self.genes[i] *= random.random() * self.max_force
-            # print(self.genes[i])
 
     def mutate(self, mutation_rate):
         if self.genes and random.random() < mutation_rate:
@@ -73,10 +72,12 @@ class Population:
         for _ in range(length):
             self.p.append(Rocket(400, 300, DNA()))
         self.target = target
+        self.life_counter = 0
+        self.generation = 1
 
-    def calculate_fitness(self, target):
+    def calculate_fitness(self):
         for rocket in self.p:
-            rocket.calculate_fitness(target)
+            rocket.calculate_fitness(self.target)
 
     def select_parent(self, tournament_size=3):
         parent = random.sample(self.p, min(tournament_size, len(self.p)))
@@ -119,24 +120,40 @@ def random_vector2():
         return pygame.Vector2.normalize(vector)
 
 
+def update_generation(generation):
+    font = pygame.font.SysFont("Arial", 32)
+    generation_count = font.render(
+        f"Generation: {generation}", True, (0, 0, 0))
+    text_rect = generation_count.get_rect()
+    return (generation_count, text_rect)
+
+
 def main(running):
-    target = Target(400, 60, 20)
+    target = Target(400, 50, 20)
     population = Population(40, 0.01, target)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                target.position = pygame.mouse.get_pos()
 
         screen.fill("white")
 
         target.draw()
 
-        try:
+        generation_counter = update_generation(population.generation)
+        screen.blit(generation_counter[0], generation_counter[1])
+
+        if population.life_counter < life_span:
             population.draw()
             population.run()
-        except:
-            population.calculate_fitness(target)
+            population.life_counter += 1
+        else:
+            population.life_counter = 0
+            population.calculate_fitness()
             population.reproduction()
+            population.generation += 1
 
         pygame.display.flip()
         clock.tick(fps)
